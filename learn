@@ -1,0 +1,12 @@
+#!/bin/bash
+
+mpirun \
+-np 9 \
+-hostfile hosts \
+python3 ./DASH.py \
+50 1 172.31.3.97 5768 \
+--batch_size 128 \
+--shard_size 8 \
+--data_buffer_size 2 \
+--model_name densenet201-cifar10-b128+8-d2-s8
+| tee densenet201-cifar10-b128+8-d2-s8.result
