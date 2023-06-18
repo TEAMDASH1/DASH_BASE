@@ -24,7 +24,7 @@ import io
 import torch
 from torch.distributed import init_process_group, destroy_process_group
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 class MPI:
     """
@@ -338,7 +338,9 @@ class TRAIN:
             """
             Wait until the copying process is complete.
             """
-            while not self.is_copy_complete():
+            if self.__copy_completed:
+                return
+            while not self.__copy_completed:
                 time.sleep(0.01)
 
         def request(self, obj):
@@ -436,7 +438,8 @@ class TRAIN:
         Args:
             obj (Any): The model data to be saved.
         """
-        self.__Copier.request(obj)
+        if self.__shard_rank >= 0:
+            self.__Copier.request(obj)
 
     def waiting_for_copying(self):
         """
@@ -493,8 +496,8 @@ class REMOTE:
                 self.__start_event.wait()
                 self.__start_event.clear()
                 remote_buffer_index = self.__get_remote_buffer_current_index()
-                received_data = self.__MPI.recv(source=self.__MPI.sharding_rank_list[self.rank], tag=0, deserialize=False)
-                self.__remote_buffer[remote_buffer_index][self.rank] = received_data
+                received_data = self.__MPI.recv(source=self.__MPI.sharding_rank_list[self.__rank], tag=0, deserialize=False)
+                self.__remote_buffer[remote_buffer_index][self.__rank] = received_data
                 self.__end_event.set()
 
         def start(self):
@@ -606,7 +609,7 @@ class REMOTE:
         self.__file_save_in_dictionary = file_save_in_dictionary
 
         self.__is_running = False
-        self.__dirty_bits = [0]*self.__data_buffer_size
+        self.__dirty_bits = [0]*self.__remote_buffer_size
         self.__dirty_bits_lock = threading.Lock()
         self.__remote_buffer = [[0 for _ in range(self.__SHARD_SIZE)] for _ in range(self.__remote_buffer_size)]
         self.__remote_buffer_index = 0
@@ -627,7 +630,7 @@ class REMOTE:
         """
         Increment the current index of the remote buffer.
         """
-        self.__remote_buffer_index = (self.__remote_buffer_index + 1) % self.__data_buffer_size
+        self.__remote_buffer_index = (self.__remote_buffer_index + 1) % self.__remote_buffer_size
     
     def __wait_dirty_bit(self, index: int):
         """
@@ -639,6 +642,7 @@ class REMOTE:
         while True:
             if self.__dirty_bits[index] == 0:
                 self.__set_dirty_bit(index)
+                break
 
     def __set_dirty_bit(self, index: int):
         """
@@ -683,7 +687,7 @@ class REMOTE:
         assert not self.__is_running, "This remote node already started."
         self.__is_running = True
 
-        if self.__use_folder and not os.path.exists("./"+self.__model_name):
+        if self.__file_save_in_dictionary and not os.path.exists("./"+self.__model_name):
             os.makedirs("./"+self.__model_name)
 
         self.__Flusher.start()

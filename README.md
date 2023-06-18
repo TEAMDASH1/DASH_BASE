@@ -39,7 +39,6 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 ```python
 args = parser.parse_args ()
-
 communicator, train_node, remote_node = DASH.init_DASH(args)
 ```
 

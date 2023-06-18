@@ -117,11 +117,11 @@ class Trainer:
         val_accuracy = 100. * correct / len (self.validation_data.dataset)
         print(f"[GPU{self.global_rank}] Epoch {epoch} | avg_train_loss = {train_loss} | avg_validation_loss = {val_loss} | validation_accuracy = {val_accuracy}")
 
-    def _train(self, max_epochs: int):
+    def train(self, max_epochs: int):
         for epoch in range (self.epochs_run, max_epochs+1):
             self._run_epoch (epoch)
             if epoch % self.save_freq == 0:
-                self.train_node.save(self._make_snapshot())
+                self.train_node.save(self._make_snapshot(epoch))
 
 def load_train_objs ():
     transform = transforms.Compose ([
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument ('save_freq', type=int, help='How often to save a snapshot')
     parser.add_argument ('master_addr', type=str, help='Master node IP address')
     parser.add_argument ('master_port', type=str, help="Master node port number")
-    parser.add_argument ('--starting_epoch', type=int, help='Input the start epoch for the DASH module. If epoch information exists in the snapshot file, that information will take precedence. (default: 1)')
+    parser.add_argument ('--starting_epoch', default=1, type=int, help='Input the start epoch for the DASH module. If epoch information exists in the snapshot file, that information will take precedence. (default: 1)')
     parser.add_argument ('--batch_size', default=32, type=int, help='Input batch size on each device (default: 32)')
     parser.add_argument ('--remote_buffer_size', default=1, type=int, help='Input data buffer size of remote node. (default: 1)')
     parser.add_argument ('--shard_size', default=1, type=int, help='Input size of sharding (default: 1)')
