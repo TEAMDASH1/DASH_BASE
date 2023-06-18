@@ -4,6 +4,8 @@
 
 DASH is specifically designed for the Spot VM environment. DASH leverages the memory of a reliable remote VM as a checkpoint area, enabling asynchronous checkpointing. 
 
+> **Note:** This GitHub repository is created for anonymous submission purposes as part of the IISWC 2023 research paper.
+
 ## Key Features
 
 - Multilevel checkpointing: Enables the storage and retrieval of intermediate model data during distributed training.
@@ -38,7 +40,7 @@ import DASH
 communicator, train_node, remote_node = DASH.init_DASH(args, train_node_auto_start=True)
 ```
 
-3. Use the train_node and remote_node objects for distributed training:
+3. Use the train_node object for distributed training:
 
 ```python
 # Perform distributed training using the train_node and remote_node objects
@@ -51,11 +53,12 @@ train_node.save(model_data)
 # Perform other operations
 ...
 ```
+> Note: The remote_node object is responsible for receiving and storing data from training nodes and does not require user control.
 
 4. Destroy the DASH framework when training is completed:
 
 ```python3
-destroy_DASH()
+DASH.destroy_DASH()
 ```
 
 For more detailed information and example code, please refer to the example code provided in this repository.
