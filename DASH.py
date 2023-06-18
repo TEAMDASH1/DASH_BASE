@@ -21,10 +21,11 @@ import queue
 import time
 from datetime import datetime
 import io
+import sys
 import torch
 from torch.distributed import init_process_group, destroy_process_group
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 class MPI:
     """
@@ -838,6 +839,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
     if communicator.rank == communicator.size-1:
         remote_node = __init_remote_node(communicator, save_count, remote_buffer_size, shard_size, model_name, file_name_include_datetime, file_save_in_dictionary)
         remote_node.start()
+        sys.exit()
     else:
         train_node = __init_train_node(communicator, master_addr, master_port, save_count, shard_size)
         if train_node_auto_start:
