@@ -38,7 +38,9 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 2. Initialize the DASH framework and obtain the necessary objects:
 
 ```python
-communicator, train_node, remote_node = DASH.init_DASH(args, train_node_auto_start=True)
+args = parser.parse_args ()
+
+communicator, train_node, remote_node = DASH.init_DASH(args)
 ```
 
 3. Use the train_node object for distributed training:
