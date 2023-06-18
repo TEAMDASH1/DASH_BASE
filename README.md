@@ -32,6 +32,7 @@ To use DASH in your training script, follow these steps:
 
 ```python
 import DASH
+from torch.nn.parallel import DistributedDataParallel as DDP
 ```
 
 2. Initialize the DASH framework and obtain the necessary objects:
@@ -43,16 +44,23 @@ communicator, train_node, remote_node = DASH.init_DASH(args, train_node_auto_sta
 3. Use the train_node object for distributed training:
 
 ```python
-# Perform distributed training using the train_node and remote_node objects
+# Create the model
+model = ...
+
+# Wrap the model with DDP
+model = DDP(model)
+
+# Perform distributed training using the train_node object
 ...
 
 # Save model data to the remote node
-train_node.save(model_data)
+train_node.save(model.state_dict())
 ...
 
-# Perform other operations
+# Perform other operations with the train_node object
 ...
 ```
+
 > Note: The remote_node object is responsible for receiving and storing data from training nodes and does not require user control.
 
 4. Destroy the DASH framework when training is completed:
