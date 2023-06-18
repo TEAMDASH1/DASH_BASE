@@ -35,7 +35,7 @@ import DASH
 2. Initialize the DASH framework and obtain the necessary objects:
 
 ```python
-communicator, train_node, remote_node = init_DASH(args, train_node_auto_start=True)
+communicator, train_node, remote_node = DASH.init_DASH(args, train_node_auto_start=True)
 ```
 
 3. Use the train_node and remote_node objects for distributed training:
