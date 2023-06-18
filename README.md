@@ -29,7 +29,7 @@ To use DASH in your training script, follow these steps:
 1. Import the necessary modules:
 
 ```python
-from dash import MPI, TRAIN, REMOTE, init_DASH, destroy_DASH
+import DASH
 ```
 
 2. Initialize the DASH framework and obtain the necessary objects:
