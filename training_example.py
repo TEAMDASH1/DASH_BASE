@@ -36,7 +36,7 @@ class Trainer:
         self.epochs_run = 1
         self.snapshot_path = snapshot_path
         self.train_node = train_node
-        self.model = DDP (self.model, device_ids=[self.local_rank])     # [DDP] init 타임에 DDP class로 wrapping.
+        self.model = DDP (self.model, device_ids=[self.local_rank])
         if self.snapshot_path:
             assert os.path.exists (snapshot_path), f"can't open file \'{snapshot_path}\': No such file or directory"
             print ("Loading snapshot")
@@ -104,8 +104,8 @@ class Trainer:
         size = len(self.validation_data)
         with torch.no_grad():
             for batch, (source, targets) in enumerate(self.validation_data):
-                source = source.to (self.local_rank)        # local_rank 디바이스로 전송.
-                targets = targets.to (self.local_rank)      # local_rank 디바이스로 전송.
+                source = source.to (self.local_rank)
+                targets = targets.to (self.local_rank)
                 loss, output = self._run_batch_val (source, targets)
                 val_loss += loss
                 prediction = output.max (1, keepdim = True) [1]
