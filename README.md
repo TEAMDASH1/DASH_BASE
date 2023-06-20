@@ -84,12 +84,14 @@ usage: training_example.py [-h] [--starting_epoch STARTING_EPOCH] [--batch_size 
                            [--remote_buffer_size REMOTE_BUFFER_SIZE] [--shard_size SHARD_SIZE] [--model_name MODEL_NAME]
                            [--file_name_include_datetime FILE_NAME_INCLUDE_DATETIME]
                            [--file_save_in_dictionary FILE_SAVE_IN_DICTIONARY] [--snapshot_path SNAPSHOT_PATH]
-                           total_epochs save_period master_addr master_port
+                           total_epochs save_period training_master_addr training_master_port
 ```
+Alternatively, you can modify and execute execute_example.sh.
+
 Replace the arguments in square brackets with your desired values. Here is a brief description of the available options:
 
 - total_epochs: The total number of epochs to train the model.
 - save_period: The frequency (in epochs) of saving model checkpoints.
-- master_addr: The address of the master node.
-- master_port: The port number of the master node.
+- training_master_addr: The address of the training node with rank 0.
+- training_master_port: The port number of the training master node with rank 0.
 ...

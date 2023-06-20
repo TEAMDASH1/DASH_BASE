@@ -194,13 +194,13 @@ class MPI:
         self.sharding_rank_list = sharding_rank_list
         return len(sharding_rank_list)
 
-    def set_environ(self, master_addr:str, master_port:str) -> None:
+    def set_environ(self, training_master_address:str, training_master_port:str) -> None:
         """
         Sets environment variables for distributed training and multilevel checkpointing.
 
         Args:
-            master_addr: The address of the master.
-            master_port: The port number of the master.
+            training_master_address: The address of the master.
+            training_master_port: The port number of the master.
 
         Returns:
             None
@@ -208,8 +208,8 @@ class MPI:
         os.environ["LOCAL_RANK"] = os.environ["OMPI_COMM_WORLD_LOCAL_RANK"]
         os.environ["RANK"] = f"{self.rank}"
         os.environ["WORLD_SIZE"] = f"{self.size-1}"
-        os.environ["MASTER_ADDR"] = master_addr
-        os.environ["MASTER_PORT"] = master_port
+        os.environ["MASTER_ADDR"] = training_master_address
+        os.environ["MASTER_PORT"] = training_master_port
         
         if(int(os.environ["LOCAL_RANK"]) == 0):
             os.environ["SHARD_RANK"] = f"{self.sharding_rank_list.index(self.rank)}"
@@ -739,8 +739,8 @@ def __init_remote_node(
 
 def __init_train_node(
     communicator: MPI,
-    master_addr: str,
-    master_port: str,
+    training_master_address: str,
+    training_master_port: str,
     save_count: int,
     shard_size: int,
 ):
@@ -749,8 +749,8 @@ def __init_train_node(
 
     Args:
         communicator (MPI): The MPI object for communication.
-        master_addr (str): The address of the master node.
-        master_port (str): The port of the master node.
+        training_master_address (str): The address of the master node.
+        training_master_port (str): The port of the master node.
         save_count (int): The number of times to perform the save operation.
         shard_size (int): The number of shards.
 
@@ -758,7 +758,7 @@ def __init_train_node(
         TRAIN: The initialized TRAIN node.
     """
 
-    communicator.set_environ(master_addr, master_port)
+    communicator.set_environ(training_master_address, training_master_port)
     init_process_group (backend="nccl", rank=int(os.environ["RANK"]), world_size=int(os.environ["WORLD_SIZE"]))
     torch.cuda.set_device (int(os.environ["LOCAL_RANK"]))
     train_node = TRAIN(communicator, save_count, int(os.environ["SHARD_RANK"]), shard_size)
@@ -808,8 +808,8 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
             raise ValueError(f"Unexpected key: {key}")
     
     args_dict.update(overrides)    
-    master_addr = args_dict['master_addr']
-    master_port = args_dict['master_port']
+    training_master_address = args_dict['training_master_address']
+    training_master_port = args_dict['training_master_port']
     total_epochs = args_dict['total_epochs']
     save_period = args_dict['save_period']
     starting_epoch = args_dict['starting_epoch']
@@ -841,7 +841,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
         remote_node.start()
         sys.exit()
     else:
-        train_node = __init_train_node(communicator, master_addr, master_port, save_count, shard_size)
+        train_node = __init_train_node(communicator, training_master_address, training_master_port, save_count, shard_size)
         if train_node_auto_start:
             train_node.start()
     
