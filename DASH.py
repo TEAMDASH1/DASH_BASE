@@ -25,7 +25,7 @@ import sys
 import torch
 from torch.distributed import init_process_group, destroy_process_group
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 class MPI:
     """
@@ -439,6 +439,7 @@ class TRAIN:
         Args:
             obj (Any): The model data to be saved.
         """
+        assert self.__is_running, "You have not started the module yet. Please start the module first using init_DASH() or start()."
         if self.__shard_rank >= 0:
             self.__Copier.request(obj)
 
