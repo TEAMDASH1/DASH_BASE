@@ -53,7 +53,7 @@ model = DDP(model)
 
 # Perform distributed training using the train_node object
 ...
-train.node.wait_copy_complete()
+train_node.wait_copy_complete()
 optimizer.step()
 ...
 
