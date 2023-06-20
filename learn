@@ -1,12 +1,15 @@
 #!/bin/bash
 
+# NP = # of TRAINING NODES + 1 (REMOTE NODE)
 mpirun \
--np 9 \
+-np 5 \
 -hostfile hosts \
-python3 ./DASH.py \
-50 1 172.31.3.97 5768 \
+python3 ./training_example.py \
+10 1 172.31.12.34 1234 \
 --batch_size 128 \
 --shard_size 8 \
 --data_buffer_size 2 \
---model_name densenet201-cifar10-b128+8-d2-s8
-| tee densenet201-cifar10-b128+8-d2-s8.result
+--model_name my_model \
+--file_name_include_datetime True \
+--file_save_in_dictionary True \
+| tee my_model.result

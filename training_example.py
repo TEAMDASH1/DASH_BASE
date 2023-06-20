@@ -67,7 +67,7 @@ class Trainer:
         output = self.model (source)
         loss = F.cross_entropy (output, targets)
         loss.backward ()
-        self.train_node.waiting_for_copying()
+        self.train_node.waiting_for_copying() # [DASH] Wait until the copying process is complete.
         self.optimizer.step ()
         return loss.item()
     
@@ -121,7 +121,7 @@ class Trainer:
         for epoch in range (self.epochs_run, max_epochs+1):
             self._run_epoch (epoch)
             if epoch % self.save_period == 0:
-                self.train_node.save(self._make_snapshot(epoch))
+                self.train_node.save(self._make_snapshot(epoch)) # [DASH] Save model data
 
 def load_train_objs ():
     transform = transforms.Compose ([
@@ -133,9 +133,6 @@ def load_train_objs ():
 
     '''
     If you want to use imageNet:
-        # model = torch.nn.Linear(20, 1)  # load your model
-        # model = BasicNet () # cifar10
-
         # train_transform = transforms.Compose([
         #     transforms.RandomResizedCrop(224),
         #     transforms.RandomHorizontalFlip(),
@@ -200,8 +197,8 @@ if __name__ == "__main__":
     parser.add_argument ('--snapshot_path', default=None, type=str, help='Input checkpoint file name (default: None)')
     args = parser.parse_args ()
 
-    communicator, train_node, _ = DASH.init_DASH(args)
+    communicator, train_node, _ = DASH.init_DASH(args) # [DASH] Initialize the DASH environment.
 
     main(args.save_period, args.total_epochs, args.batch_size, args.snapshot_path, train_node)
-    
-    DASH.destroy_DASH()
+
+    DASH.destroy_DASH() # [DASH] Destroy the DASH environment.
