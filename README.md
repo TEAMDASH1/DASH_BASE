@@ -48,21 +48,29 @@ communicator, train_node, remote_node = DASH.init_DASH(args)
 # Create the model
 model = ...
 
-# Wrap the model with DDP
+# Wrap the model with PyTorch DDP
 model = DDP(model)
 
 # Perform distributed training using the train_node object
 ...
+train.node.wait_copy_complete()
+optimizer.step()
+...
 
 # Save model data to the remote node
-train_node.save(model.state_dict())
+train_node.save(model.state_dict()) # Option 1
+train_node.save({
+    'model_state_dict': self.model.module.state_dict (),
+    ...
+}) # Option 2
 ...
 
 # Perform other operations with the train_node object
 ...
 ```
+> Note 1: Before updating your model using **optimizer.step()**, make sure to call **wait_copy_complete()**.
 
-> Note: The remote_node object is responsible for receiving and storing data from training nodes and does not require user control.
+> Note 2: The remote_node object is responsible for receiving and storing data from training nodes and does not require user control.
 
 4. Destroy the DASH framework when training is completed:
 

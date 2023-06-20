@@ -20,7 +20,7 @@ class Trainer:
         validation_data: DataLoader,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler.StepLR,
-        save_freq: int,
+        save_period: int,
         snapshot_path: str,
         train_node: DASH.TRAIN,
     ) -> None:
@@ -32,7 +32,7 @@ class Trainer:
         self.validation_data = validation_data
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.save_freq = save_freq
+        self.save_period = save_period
         self.epochs_run = 1
         self.snapshot_path = snapshot_path
         self.train_node = train_node
@@ -120,7 +120,7 @@ class Trainer:
     def train(self, max_epochs: int):
         for epoch in range (self.epochs_run, max_epochs+1):
             self._run_epoch (epoch)
-            if epoch % self.save_freq == 0:
+            if epoch % self.save_period == 0:
                 self.train_node.save(self._make_snapshot(epoch))
 
 def load_train_objs ():
@@ -176,18 +176,18 @@ def prepare_dataloader (dataset: Dataset, batch_size: int, DDP:bool=True):
             shuffle=False,
         )
 
-def main (save_freq: int, total_epochs: int, batch_size: int, snapshot_path: str, train_node: DASH.TRAIN):
+def main (save_period: int, total_epochs: int, batch_size: int, snapshot_path: str, train_node: DASH.TRAIN):
     train_dataset, validation_dataset, model, optimizer, scheduler = load_train_objs ()
     train_data = prepare_dataloader (train_dataset, batch_size)
     valldation_data = prepare_dataloader(validation_dataset, batch_size, False)
-    trainer = Trainer (model, train_data, valldation_data, optimizer, scheduler, save_freq, snapshot_path, train_node)
+    trainer = Trainer (model, train_data, valldation_data, optimizer, scheduler, save_period, snapshot_path, train_node)
     trainer.train (total_epochs)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser (description='simple distributed training job')
     parser.add_argument ('total_epochs', type=int, help='Total epochs to train the model')
-    parser.add_argument ('save_freq', type=int, help='How often to save a snapshot')
+    parser.add_argument ('save_period', type=int, help='How often to save a snapshot')
     parser.add_argument ('master_addr', type=str, help='Master node IP address')
     parser.add_argument ('master_port', type=str, help="Master node port number")
     parser.add_argument ('--starting_epoch', default=1, type=int, help='Input the start epoch for the DASH module. If epoch information exists in the snapshot file, that information will take precedence. (default: 1)')
@@ -202,4 +202,6 @@ if __name__ == "__main__":
 
     communicator, train_node, _ = DASH.init_DASH(args)
 
-    main(args.save_freq, args.total_epochs, args.batch_size, args.snapshot_path, train_node)
+    main(args.save_period, args.total_epochs, args.batch_size, args.snapshot_path, train_node)
+    
+    DASH.destroy_DASH()

@@ -8,7 +8,7 @@ To use DASH, import the package into your learning script and utilize the packag
 For more detailed information and example code, please refer to the README and example code available on the DASH GitHub repository:
 GitHub Repository: https://github.com/TEAMDASH1/DASH
 
-Last Modified: 2023-06-18
+Last Modified: 2023-06-20
 Author: TEAM_DASH
 """
 
@@ -25,7 +25,7 @@ import sys
 import torch
 from torch.distributed import init_process_group, destroy_process_group
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 class MPI:
     """
@@ -767,7 +767,7 @@ def __init_train_node(
 def calculate_save_count(
     start_epoch: int,
     total_epochs: int,
-    save_freq: int
+    save_period: int
 ) -> int:
     """
     Calculate the number of times to perform the save operation.
@@ -775,13 +775,13 @@ def calculate_save_count(
     Args:
         start_epoch (int): The starting epoch.
         total_epochs (int): The total number of epochs.
-        save_freq (int): The frequency of save operations.
+        save_period (int): The period of save operations.
 
     Returns:
         int: The number of times to perform the save operation.
     """
 
-    save_points = list(range(1, total_epochs+1, save_freq))
+    save_points = list(range(1, total_epochs+1, save_period))
     save_counts = len([point for point in save_points if point >= start_epoch])
     return save_counts
 
@@ -811,7 +811,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
     master_addr = args_dict['master_addr']
     master_port = args_dict['master_port']
     total_epochs = args_dict['total_epochs']
-    save_freq = args_dict['save_freq']
+    save_period = args_dict['save_period']
     starting_epoch = args_dict['starting_epoch']
     remote_buffer_size = args_dict['remote_buffer_size']
     shard_size = args_dict['shard_size']
@@ -831,7 +831,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
 
     assert shard_size <= max_shard_size, f"The shard size is too large. (input: {shard_size}, max: {max_shard_size})"
 
-    save_count = calculate_save_count(starting_epoch, total_epochs, save_freq)
+    save_count = calculate_save_count(starting_epoch, total_epochs, save_period)
 
     train_node = None
     remote_node = None
