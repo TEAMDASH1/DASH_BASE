@@ -1,4 +1,4 @@
-mpi_module
+mpi_module.so
 openmpi-4.1.4.tar.gz
 openmpi-4.1.4
 *.pt.tar

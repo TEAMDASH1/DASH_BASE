@@ -74,4 +74,22 @@ train_node.save(model.state_dict()) # You can also use the Python object {} here
 DASH.destroy_DASH()
 ```
 
+
 For more detailed information and example code, please refer to the example code provided in this repository.
+
+To run the `training_example.py` script, use the following command:
+
+```bash
+usage: training_example.py [-h] [--starting_epoch STARTING_EPOCH] [--batch_size BATCH_SIZE]
+                           [--remote_buffer_size REMOTE_BUFFER_SIZE] [--shard_size SHARD_SIZE] [--model_name MODEL_NAME]
+                           [--file_name_include_datetime FILE_NAME_INCLUDE_DATETIME]
+                           [--file_save_in_dictionary FILE_SAVE_IN_DICTIONARY] [--snapshot_path SNAPSHOT_PATH]
+                           total_epochs save_period master_addr master_port
+```
+Replace the arguments in square brackets with your desired values. Here is a brief description of the available options:
+
+- total_epochs: The total number of epochs to train the model.
+- save_period: The frequency (in epochs) of saving model checkpoints.
+- master_addr: The address of the master node.
+- master_port: The port number of the master node.
+...
