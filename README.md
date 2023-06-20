@@ -58,11 +58,7 @@ optimizer.step()
 ...
 
 # Save model data to the remote node
-train_node.save(model.state_dict()) # Option 1
-train_node.save({
-    'model_state_dict': self.model.module.state_dict (),
-    ...
-}) # Option 2
+train_node.save(model.state_dict()) # You can also use the Python object {} here
 ...
 
 # Perform other operations with the train_node object
