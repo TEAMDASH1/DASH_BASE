@@ -53,7 +53,7 @@ model = DDP(model)
 
 # Perform distributed training using the train_node object
 ...
-train.node.wait_copy_complete()
+train_node.wait_copy_complete()
 optimizer.step()
 ...
 
@@ -91,7 +91,6 @@ Alternatively, you can modify and execute execute_example.sh.
 Replace the arguments in square brackets with your desired values. Here is a brief description of the available options:
 
 - total_epochs: The total number of epochs to train the model.
-- save_period: The frequency (in epochs) of saving model checkpoints.
+- save_period: The period (in epochs) of saving model checkpoints.
 - training_master_addr: The address of the training node with rank 0.
 - training_master_port: The port number of the training master node with rank 0.
-...
