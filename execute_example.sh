@@ -7,7 +7,6 @@ mpirun \
 python3 ./training_example.py \
 10 1 172.31.12.34 1234 \
 --batch_size 128 \
---shard_size 8 \
 --data_buffer_size 2 \
 --model_name my_model \
 --file_name_include_datetime True \

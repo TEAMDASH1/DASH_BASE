@@ -10,7 +10,7 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import os
 
-import DASH
+import DASH_BASE
 
 class Trainer:
     def __init__ (
@@ -22,7 +22,7 @@ class Trainer:
         scheduler: torch.optim.lr_scheduler.StepLR,
         save_period: int,
         snapshot_path: str,
-        train_node: DASH.TRAIN,
+        train_node: DASH_BASE.TRAIN,
     ) -> None:
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
@@ -67,7 +67,6 @@ class Trainer:
         output = self.model (source)
         loss = F.cross_entropy (output, targets)
         loss.backward ()
-        self.train_node.waiting_for_copying() # [DASH] Wait until the copying process is complete.
         self.optimizer.step ()
         return loss.item()
     
@@ -173,7 +172,7 @@ def prepare_dataloader (dataset: Dataset, batch_size: int, DDP:bool=True):
             shuffle=False,
         )
 
-def main (save_period: int, total_epochs: int, batch_size: int, snapshot_path: str, train_node: DASH.TRAIN):
+def main (save_period: int, total_epochs: int, batch_size: int, snapshot_path: str, train_node: DASH_BASE.TRAIN):
     train_dataset, validation_dataset, model, optimizer, scheduler = load_train_objs ()
     train_data = prepare_dataloader (train_dataset, batch_size)
     valldation_data = prepare_dataloader(validation_dataset, batch_size, False)
@@ -190,15 +189,14 @@ if __name__ == "__main__":
     parser.add_argument ('--starting_epoch', default=1, type=int, help='Input the start epoch for the DASH module. If epoch information exists in the snapshot file, that information will take precedence. (default: 1)')
     parser.add_argument ('--batch_size', default=32, type=int, help='Input batch size on each device (default: 32)')
     parser.add_argument ('--remote_buffer_size', default=1, type=int, help='Input data buffer size of remote node. (default: 1)')
-    parser.add_argument ('--shard_size', default=1, type=int, help='Input size of sharding (default: 1)')
     parser.add_argument ('--model_name', default='user_model', type=str, help='Input your ML model name (default: user_model)')
     parser.add_argument ('--file_name_include_datetime', '--file_date', default=False, type=bool, help='Add datetime to checkpoint files. (default: False)')
     parser.add_argument ('--file_save_in_dictionary', '--file_dictionary', default=False, type=bool, help='Checkfiles will be saved in a dictionary (default: False)')
     parser.add_argument ('--snapshot_path', default=None, type=str, help='Input checkpoint file name (default: None)')
     args = parser.parse_args ()
 
-    communicator, train_node, _ = DASH.init_DASH(args) # [DASH] Initialize the DASH environment.
+    communicator, train_node, _ = DASH_BASE.init_DASH(args) # [DASH] Initialize the DASH environment.
 
     main(args.save_period, args.total_epochs, args.batch_size, args.snapshot_path, train_node)
 
-    DASH.destroy_DASH() # [DASH] Destroy the DASH environment.
+    DASH_BASE.destroy_DASH() # [DASH] Destroy the DASH environment.

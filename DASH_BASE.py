@@ -229,209 +229,29 @@ class MPI:
         print(f"rank {self.rank}: {msg}")
 
 class TRAIN:
-    """
-    TRAIN class represents a node for training deep learning models.
-    It abstracts the concept of a training node.
-
-    The node consists of Copier, Sender, and Trainer.
-    Note: Trainer is not implemented in this code as it is user-defined when importing this class.
-    Therefore, only Copier and Sender are implemented here.
-
-    Copier is responsible for dumping model data to the CPU and passing it to Sender.
-    Sender is responsible for transmitting the data using MPI.
-    Both modules are executed in parallel. However, a separate lock exists in Copier to prevent model updates during dumping.
-
-    To implement this, Copier and Sender are implemented as subclasses.
-    The TRAIN class instantiates these subclasses and provides a few simple functions for users to use without knowing the internal structure.
-    """
-    class __CopierClass:
-        """
-        __CopierClass represents the Copier module.
-        It dumps model data to the CPU and passes it to Sender.
-
-        Args:
-            save_count (int): The number of times to perform the copying and sending process.
-            shard_rank (int): The rank of the current shard.
-            shard_size (int): The total number of shards.
-            sender_enqueue (Callable[[Any], None]): The function to enqueue data in Sender.
-        """
-
-        def __init__(
-            self,
-            save_count: int,
-            shard_rank: int,
-            shard_size: int,
-            sender_enqueue: Callable[[Any], None]
-        ):
-            self.__save_count = save_count
-            self.__shard_rank = shard_rank
-            self.__shard_size = shard_size
-            self.__Sender_enqueue = sender_enqueue
-            
-            self.__thread = threading.Thread(target=self.__method, args=())
-            self.__copy_lock = threading.Lock()
-            self.__copy_completed = True
-            self.__buffer = None
-
-        def __method(self):
-            for _ in range(self.__save_count):
-                while self.__buffer is None:
-                    time.sleep(0.01)
-
-                # Dump the model data to a byte buffer
-                byteBuffer = io.BytesIO()
-                torch.save(self.__buffer, byteBuffer)
-                self.__buffer = None
-
-                # Release the copy lock to allow model updates
-                with self.__copy_lock:
-                    self.__copy_completed = True
-
-                # Get the dumped data as bytes
-                dump = byteBuffer.getvalue()
-                del byteBuffer
-
-                def compute_shard(dump):
-                    """
-                    Compute the range of data to be used by the current shard.
-
-                    Args:
-                        dump (bytes): The dumped model data.
-
-                    Returns:
-                        left (int): The start index of the shard's data.
-                        right (int): The end index of the shard's data.
-                    """
-                    key_len = len(dump)
-                    compute_node_len = self.__shard_size
-                    q = int(key_len / compute_node_len)
-                    r = int(key_len % compute_node_len)
-                    rank = self.__shard_rank
-
-                    if rank+1 <= r:
-                        left = (rank)*(q+1)
-                        right = (rank+1)*(q+1)-1
-                    else:
-                        left = (rank)*q+r
-                        right = (rank+1)*q+r-1
-                    return left, right
-                
-                # Get the data range for the current shard
-                left, right = compute_shard(dump)
-                if left<=right:
-                    dump = dump[left:right+1]
-                else:
-                    dump = bytes()
-                
-                # Enqueue the data in Sender
-                self.__Sender_enqueue(dump)
-
-        def is_copy_complete(self):
-            """
-            Check if the copying process is complete.
-
-            Returns:
-                bool: True if the copying process is complete, False otherwise.
-            """
-            return self.__copy_completed
-
-        def wait_copy_complete(self):
-            """
-            Wait until the copying process is complete.
-            """
-            if self.__copy_completed:
-                return
-            while not self.__copy_completed:
-                time.sleep(0.01)
-
-        def request(self, obj):
-            """
-            Request to copy the model data.
-
-            Args:
-                obj (Any): The model data to be copied.
-            """
-            self.wait_copy_complete()
-            with self.__copy_lock:
-                if self.is_copy_complete(): # Double check if copying is complete
-                    self.__is_copy_complete = False
-                    self.__buffer = obj
-
-        def start(self):
-            """
-            Start the Copier thread.
-            """
-            self.__thread.start()
-
-    class __SenderClass:
-        """
-        __SenderClass represents the Sender module.
-        It transmits the data using MPI.
-
-        Args:
-            save_count (int): The number of times to perform the sending process.
-            MPI (MPI): The MPI object for communication.
-        """
-
-        def __init__(
-            self,
-            save_count:int,
-            MPI:MPI,
-        ):
-            self.__thread = threading.Thread(target=self.__method, args=())
-            self.__queue = queue.Queue()
-            self.__save_count = save_count
-            self.__MPI = MPI
-
-        def __method(self):
-            for _ in range(self.__save_count):
-                data = self.__queue.get()
-                self.__MPI.send(data=data, dest=self.__MPI.size-1, tag=0)
-                del data
-
-        def start(self):
-            """
-            Start the Sender thread.
-            """
-            self.__thread.start()
-        
-        def enqueue(self, data):
-            """
-            Enqueue data to be sent.
-
-            Args:
-                data (Any): The data to be sent.
-            """
-            self.__queue.put(data)
-
     def __init__(
         self,
         MPI: MPI,
         save_count: int,
         shard_rank: int,
-        shard_size: int
     ):
         self.__MPI = MPI
         self.__save_count = save_count
         self.__shard_rank = shard_rank
-        self.__shard_size = shard_size
-        self.__Sender = self.__SenderClass(self.__save_count, self.__MPI)
-        self.__Copier = self.__CopierClass(self.__save_count, self.__shard_rank, self.__shard_size, self.__Sender.enqueue)
-        self.__is_running = False
-
-    def start(self):
-        """
-        Start the TRAIN node.
-        """
-        assert not self.__is_running, "This train node already started."
-        self.__is_running = True
-        
-        if self.__shard_rank>=0 and self.__shard_rank<self.__shard_size:
-            self.__Sender.start()
-            self.__Copier.start()
-        else:
-            pass
     
+    def __method(self, obj):
+        for _ in range(self.__save_count):
+            # Dump the model data to a byte buffer
+            byteBuffer = io.BytesIO()
+            torch.save(obj, byteBuffer)
+
+            # Get the dumped data as bytes
+            dump = byteBuffer.getvalue()
+            del byteBuffer
+
+            self.__MPI.send(data=dump, dest=self.__MPI.size-1, tag=0)
+            del dump
+
     def save(self, obj):
         """
         Request to save the model data.
@@ -439,15 +259,8 @@ class TRAIN:
         Args:
             obj (Any): The model data to be saved.
         """
-        assert self.__is_running, "You have not started the module yet. Please start the module first using init_DASH() or start()."
-        if self.__shard_rank >= 0:
-            self.__Copier.request(obj)
-
-    def waiting_for_copying(self):
-        """
-        Wait until the copying process is complete.
-        """
-        self.__Copier.wait_copy_complete()
+        if self.__shard_rank == 0:
+            self.__method(obj)
 
 class REMOTE:
     """
@@ -586,7 +399,6 @@ class REMOTE:
         shard_size: int,
         model_name: str,
         file_name_include_datetime: bool,
-        # file_name_include_version: bool = False,
         file_save_in_dictionary: bool,
     ):
         """
@@ -743,7 +555,6 @@ def __init_train_node(
     training_master_address: str,
     training_master_port: str,
     save_count: int,
-    shard_size: int,
 ):
     """
     Initialize the TRAIN node.
@@ -762,7 +573,7 @@ def __init_train_node(
     communicator.set_environ(training_master_address, training_master_port)
     init_process_group (backend="nccl", rank=int(os.environ["RANK"]), world_size=int(os.environ["WORLD_SIZE"]))
     torch.cuda.set_device (int(os.environ["LOCAL_RANK"]))
-    train_node = TRAIN(communicator, save_count, int(os.environ["SHARD_RANK"]), shard_size)
+    train_node = TRAIN(communicator, save_count, int(os.environ["SHARD_RANK"]))
     return train_node
 
 def calculate_save_count(
@@ -786,7 +597,7 @@ def calculate_save_count(
     save_counts = len([point for point in save_points if point >= start_epoch])
     return save_counts
 
-def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
+def init_DASH(args, **overrides) -> MPI:
     """
     Initialize the DASH environment.
 
@@ -798,9 +609,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
     Returns:
         Tuple[MPI, Optional[TRAIN], Optional[REMOTE]]: The MPI communicator, TRAIN node (if created), and REMOTE node (if created).
     """
-    
-    if not train_node_auto_start:
-        print("** DASH: (Warning) \'train_node_auto-start\' is false. is set to false. Please make sure to call train_node.start() before training. **")
+    print("*** This is DASH_BASE. ***")
 
     args_dict = vars(args)
     valid_keys = set(args_dict.keys())
@@ -815,7 +624,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
     save_period = args_dict['save_period']
     starting_epoch = args_dict['starting_epoch']
     remote_buffer_size = args_dict['remote_buffer_size']
-    shard_size = args_dict['shard_size']
+    shard_size = 1
     file_name_include_datetime = args_dict['file_name_include_datetime']
     file_save_in_dictionary = args_dict['file_save_in_dictionary']
     model_name = args_dict['model_name']
@@ -842,9 +651,7 @@ def init_DASH(args, train_node_auto_start=True, **overrides) -> MPI:
         remote_node.start()
         sys.exit()
     else:
-        train_node = __init_train_node(communicator, training_master_address, training_master_port, save_count, shard_size)
-        if train_node_auto_start:
-            train_node.start()
+        train_node = __init_train_node(communicator, training_master_address, training_master_port, save_count)
     
     return communicator, train_node, remote_node
 
